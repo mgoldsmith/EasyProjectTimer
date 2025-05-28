@@ -1,1 +1,37 @@
+# JUCE Build outputs
 Builds/
+JuceLibraryCode/
+
+# IDE files
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.xcodeproj/
+*.xcworkspace/
+
+# Compiled binaries
+*.exe
+*.dll
+*.dylib
+*.so
+*.a
+*.lib
+*.vst
+*.vst3
+*.au
+*.component
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*~
