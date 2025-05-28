@@ -60,6 +60,11 @@ public:
     // Timer functionality
     double getTotalTime() const { return totalPlaybackTime; }
     bool isCurrentlyPlaying() const { return isPlaying; }
+    double getCurrentSessionTime() const {
+        if (isPlaying)
+            return (juce::Time::getCurrentTime() - lastPlaybackStart).inSeconds();
+        return 0.0;
+    }
     void resetTimer() { totalPlaybackTime = 0.0; }
     
     bool isPlaying = false;

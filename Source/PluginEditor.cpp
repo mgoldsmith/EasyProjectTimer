@@ -94,6 +94,7 @@ void EasyProjectTimerAudioProcessorEditor::timerCallback()
         // We need to estimate current session time since we can't access
         // the private lastPlaybackStart from here
         // The processor handles the actual timing, this is just for display
+        currentTotal += audioProcessor.getCurrentSessionTime();
         statusLabel.setText ("Playing", juce::dontSendNotification);
         statusLabel.setColour (juce::Label::textColourId, juce::Colours::lightgreen);
     }
