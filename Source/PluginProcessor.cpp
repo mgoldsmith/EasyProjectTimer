@@ -132,30 +132,41 @@ bool EasyProjectTimerAudioProcessor::isBusesLayoutSupported (const BusesLayout& 
 void EasyProjectTimerAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
+
+    // Get playback state from host
+    auto playHead = getPlayHead();
+    bool currentlyPlaying = false;
+    
+    if (playHead != nullptr)
+    {
+        auto positionInfo = playHead->getPosition();
+        if (positionInfo.hasValue())
+        {
+            currentlyPlaying = positionInfo->getIsPlaying();
+        }
+    }
+    
+    // Handle playback state changes
+    if (currentlyPlaying && !isPlaying)
+    {
+        // Just started playing
+        lastPlaybackStart = juce::Time::getCurrentTime();
+        isPlaying = true;
+    }
+    else if (!currentlyPlaying && isPlaying)
+    {
+        // Just stopped playing - add the elapsed time
+        auto elapsed = juce::Time::getCurrentTime() - lastPlaybackStart;
+        totalPlaybackTime += elapsed.inSeconds();
+        isPlaying = false;
+    }
+    
+    // Pass audio through unchanged
+    auto totalNumInputChannels = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
-
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-
-        // ..do something to the data...
-    }
 }
 
 //==============================================================================
@@ -172,15 +183,24 @@ juce::AudioProcessorEditor* EasyProjectTimerAudioProcessor::createEditor()
 //==============================================================================
 void EasyProjectTimerAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
+    // Save the total time in the plugin state
+    std::unique_ptr<juce::XmlElement> xml (new juce::XmlElement ("EasyProjectTimer"));
+    xml->setAttribute ("totalTime", totalPlaybackTime);
+    copyXmlToBinary (*xml, destData);
 }
 
 void EasyProjectTimerAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
-    // You should use this method to restore your parameters from this memory block,
-    // whose contents will have been created by the getStateInformation() call.
+    // Restore the total time from plugin state
+    std::unique_ptr<juce::XmlElement> xmlState (getXmlFromBinary (data, sizeInBytes));
+    
+    if (xmlState.get() != nullptr)
+    {
+        if (xmlState->hasTagName ("EasyProjectTimer"))
+        {
+            totalPlaybackTime = xmlState->getDoubleAttribute ("totalTime", 0.0);
+        }
+    }
 }
 
 //==============================================================================

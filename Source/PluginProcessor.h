@@ -55,6 +55,16 @@ public:
     //==============================================================================
     void getStateInformation (juce::MemoryBlock& destData) override;
     void setStateInformation (const void* data, int sizeInBytes) override;
+    
+    //==============================================================================
+    // Timer functionality
+    double getTotalTime() const { return totalPlaybackTime; }
+    bool isCurrentlyPlaying() const { return isPlaying; }
+    void resetTimer() { totalPlaybackTime = 0.0; }
+    
+    bool isPlaying = false;
+    double totalPlaybackTime = 0.0;
+    juce::Time lastPlaybackStart;
 
 private:
     //==============================================================================
